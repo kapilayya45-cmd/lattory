@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mobile Lottery System</title>
+    <link rel="stylesheet" href="https://jsdelivr.net">
+    <style>
+        body { background: #f4f7f6; }
+        .card-price { font-size: 1.5rem; color: #28a745; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h1 class="text-center mb-4">📱 Daily Mobile Lottery</h1>
+    <p class="text-center">Draw every day at <b>8:00 PM</b></p>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-success">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="row mt-5">
+        {% for key, info in categories.items() %}
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body text-center">
+                    <h5>{{ info.name }}</h5>
+                    <p class="card-price">₹{{ info.price }} per ticket</p>
+                    <form action="/buy/{{ key }}" method="POST">
+                        <input type="text" name="name" placeholder="Your Name" class="form-control mb-2" required>
+                        <input type="text" name="phone" placeholder="Phone Number" class="form-control mb-2" required>
+                        <textarea name="address" placeholder="Delivery Address" class="form-control mb-2" required></textarea>
+                        <button type="submit" class="btn btn-primary w-100">Buy Ticket</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-5">
+        <h3>🏆 Recent Winners</h3>
+        <table class="table table-striped mt-3 bg-white shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Winner Name</th>
+                    <th>Category</th>
+                    <th>Ticket No</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for winner in winners %}
+                <tr>
+                    <td>{{ winner.draw_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ winner.user_name }}</td>
+                    <td>{{ winner.category }}</td>
+                    <td>{{ winner.ticket_number }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
