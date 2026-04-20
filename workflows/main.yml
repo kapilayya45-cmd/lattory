@@ -1,0 +1,10 @@
+name: Mobile Lottery Build
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Output Build Info
+        run: |
+          echo "Build Number: ${{ github.run_number }}"
+          echo "Unique ID: ${{ github.run_id }}"
