@@ -9,11 +9,10 @@ app = Flask(__name__)
 
 # --- Database & Config ---
 basedir = os.path.abspath(os.path.dirname(__file__))
-# Database file path simplified for Railway
-db_path = os.path.join(basedir, 'lottery.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
+# Railway database path fix
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'lottery.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'mobile_lottery_secure_key_99'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default_secret_key_123')
 
 db = SQLAlchemy(app)
 scheduler = APScheduler()
@@ -40,7 +39,7 @@ CATEGORIES = {
     'flagship': {'name': 'Flagship Mobiles (High Cost)', 'price': 500}
 }
 
-# --- Draw Logic (8 PM Daily) ---
+# --- Draw Logic ---
 def run_lottery_draw():
     with app.app_context():
         for cat_key, info in CATEGORIES.items():
@@ -59,7 +58,10 @@ def run_lottery_draw():
 # --- Routes ---
 @app.route('/')
 def index():
-    winners = Winner.query.order_by(Winner.draw_date.desc()).all()
+    try:
+        winners = Winner.query.order_by(Winner.draw_date.desc()).all()
+    except:
+        winners = []
     return render_template('index.html', categories=CATEGORIES, winners=winners)
 
 @app.route('/buy/<cat_key>', methods=['POST'])
@@ -77,14 +79,14 @@ def buy_ticket(cat_key):
     flash(f"Success! Your Ticket Number is {t_num}")
     return redirect(url_for('index'))
 
-# --- Startup Logic ---
+# --- Startup ---
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all() # Database create chestundi
-    
-    # Scheduler start
+    # Scheduler setup
     if not scheduler.running:
         scheduler.add_job(id='daily_draw', func=run_lottery_draw, trigger='cron', hour=20, minute=0)
         scheduler.start()
-        
-    app.run(debug=False) # Production lo debug False
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host='0.0.0.0', port=port)
