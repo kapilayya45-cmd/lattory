@@ -10,7 +10,7 @@ app = Flask(__name__)
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'lottery.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'lottery-timer-secret-2024'
+app.config['SECRET_KEY'] = 'professional-mobile-lottery-2024'
 
 db = SQLAlchemy(app)
 
@@ -31,85 +31,104 @@ class Winner(db.Model):
     draw_date = db.Column(db.DateTime, default=datetime.utcnow)
 
 CATEGORIES = {
-    'low_cost': {'name': 'Budget Mobiles (Below 10k)', 'price': 50},
-    'mid_range': {'name': 'Mid-Range Mobiles (Above 10k)', 'price': 150},
-    'flagship': {'name': 'Flagship Mobiles (High Cost)', 'price': 500}
+    'low_cost': {'name': 'Budget Mobiles', 'spec': 'Models Below 15k', 'price': 50, 'color': '#00d2ff'},
+    'mid_range': {'name': 'Mid-Range Mobiles', 'spec': 'Models Below 40k', 'price': 150, 'color': '#9d50bb'},
+    'flagship': {'name': 'Premium Flagships', 'spec': 'iPhone / S24 Ultra', 'price': 500, 'color': '#f21170'}
 }
 
-# --- HTML Design with Timer & WhatsApp ---
+# --- Professional UI Design ---
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Mobile Lottery System</title>
+    <title>NextGen Mobile Lottery</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://jsdelivr.net">
     <link rel="stylesheet" href="https://cloudflare.com">
     <style>
-        body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
-        .hero { background: linear-gradient(135deg, #6610f2, #6f42c1); color: white; padding: 50px 0; border-radius: 0 0 40px 40px; }
-        .card { border-radius: 20px; border: none; transition: 0.3s; margin-bottom: 20px; }
-        .card:hover { transform: translateY(-10px); }
-        .price { font-size: 28px; color: #28a745; font-weight: bold; }
-        .whatsapp-float {
-            position: fixed; width: 60px; height: 60px; bottom: 40px; right: 40px;
-            background-color: #25d366; color: #FFF; border-radius: 50px;
-            text-align: center; font-size: 30px; box-shadow: 2px 2px 3px #999; z-index: 100;
-        }
-        #countdown { font-size: 1.5rem; font-weight: bold; color: #ffc107; background: rgba(0,0,0,0.2); padding: 10px 20px; border-radius: 30px; display: inline-block; margin-top: 15px; }
+        :root { --glass: rgba(255, 255, 255, 0.1); }
+        body { background: #0f0c29; background: linear-gradient(to right, #24243e, #302b63, #0f0c29); color: white; font-family: 'Inter', sans-serif; }
+        
+        .navbar { background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+        .hero { padding: 80px 0 60px; text-align: center; }
+        .hero h1 { font-size: 3.5rem; font-weight: 800; background: -webkit-linear-gradient(#eee, #333); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .timer-box { background: var(--glass); border: 1px solid rgba(255,255,255,0.2); padding: 15px 30px; border-radius: 50px; display: inline-block; font-size: 1.5rem; font-weight: bold; color: #00d2ff; box-shadow: 0 0 20px rgba(0,210,255,0.3); }
+        
+        .card-lottery { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 25px; backdrop-filter: blur(15px); transition: 0.4s; overflow: hidden; }
+        .card-lottery:hover { transform: translateY(-15px); border-color: rgba(255,255,255,0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        
+        .price-circle { width: 80px; height: 80px; line-height: 80px; background: white; color: black; border-radius: 50%; font-weight: 900; margin: -40px auto 20px; font-size: 1.2rem; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        
+        .btn-buy { border-radius: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; padding: 12px; border: none; }
+        
+        .whatsapp-btn { position: fixed; bottom: 30px; right: 30px; width: 65px; height: 65px; background: #25d366; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; color: white; text-decoration: none; box-shadow: 0 10px 25px rgba(37,211,102,0.4); z-index: 1000; }
+        
+        .table-custom { background: var(--glass); border-radius: 20px; color: white !important; }
+        .table-custom th { color: #00d2ff; }
+        .form-control { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; }
+        .form-control:focus { background: rgba(255,255,255,0.2); color: white; border-color: #00d2ff; box-shadow: none; }
     </style>
 </head>
 <body>
-    <a href="https://wa.me" class="whatsapp-float" target="_blank">
-        <i class="fab fa-whatsapp" style="margin-top:16px;"></i>
-    </a>
 
-    <div class="hero text-center mb-5 shadow">
-        <h1>📱 Daily Mobile Lottery</h1>
-        <p>Win Premium Smartphones Every Day!</p>
-        <div id="countdown">Loading Timer...</div>
+    <nav class="navbar navbar-dark fixed-top">
+        <div class="container text-center">
+            <a class="navbar-brand fw-bold" href="#"><i class="fas fa-bolt text-warning"></i> SMART-WIN LOTTERY</a>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <h1>Dream Phones, Mini Prices.</h1>
+            <p class="text-secondary mt-2">India's most transparent and automated mobile lottery system.</p>
+            <div class="timer-box mt-4" id="countdown">Calculating Draw Time...</div>
+        </div>
     </div>
 
-    <div class="container">
+    <div class="container mb-5">
         {% with messages = get_flashed_messages() %}
           {% if messages %}
             {% for message in messages %}
-              <div class="alert alert-success shadow text-center">{{ message }}</div>
+              <div class="alert alert-info bg-info text-dark border-0 rounded-pill text-center shadow-lg">{{ message }}</div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        <div class="row">
+        <div class="row mt-5">
             {% for key, info in categories.items() %}
-            <div class="col-md-4">
-                <div class="card shadow-sm p-4 text-center">
-                    <h3 class="h5">{{ info.name }}</h3>
-                    <p class="price">₹{{ info.price }}</p>
+            <div class="col-lg-4 mb-4">
+                <div class="card card-lottery p-4 pt-5 text-center">
+                    <div class="price-circle" style="background: {{ info.color }}; color: white;">₹{{ info.price }}</div>
+                    <h3 class="fw-bold">{{ info.name }}</h3>
+                    <p class="text-secondary small mb-4">{{ info.spec }}</p>
+                    
                     <form action="/buy/{{ key }}" method="POST">
-                        <input type="text" name="name" placeholder="Your Name" class="form-control mb-2" required>
-                        <input type="text" name="phone" placeholder="WhatsApp Number" class="form-control mb-2" required>
-                        <textarea name="address" placeholder="Shipping Address" class="form-control mb-2" rows="2" required></textarea>
-                        <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">BOOK TICKET</button>
+                        <input type="text" name="name" placeholder="Full Name" class="form-control mb-3" required>
+                        <input type="text" name="phone" placeholder="WhatsApp Number" class="form-control mb-3" required>
+                        <textarea name="address" placeholder="Shipping Address" class="form-control mb-4" rows="2" required></textarea>
+                        <button type="submit" class="btn btn-buy w-100 shadow" style="background: {{ info.color }}; color: white;">Get Ticket Now</button>
                     </form>
                 </div>
             </div>
             {% endfor %}
         </div>
 
-        <div class="mt-5 mb-5 p-4 bg-white rounded shadow">
-            <h2 class="text-center mb-4 text-primary"><i class="fas fa-trophy"></i> Recent Winners</h2>
+        <!-- Recent Winners -->
+        <div class="mt-5 p-5 card-lottery border-0 shadow">
+            <h2 class="text-center mb-5 fw-bold"><i class="fas fa-award text-warning"></i> Recent Hall of Fame</h2>
             <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light text-center">
-                        <tr><th>Date</th><th>Winner</th><th>Category</th><th>Ticket ID</th></tr>
+                <table class="table table-custom table-hover border-0">
+                    <thead class="text-center">
+                        <tr><th>Date</th><th>Winner Name</th><th>Category</th><th>Ticket ID</th></tr>
                     </thead>
-                    <tbody class="text-center">
+                    <tbody class="text-center align-middle">
                         {% for winner in winners %}
                         <tr>
-                            <td>{{ winner.draw_date.strftime('%d %b %Y') }}</td>
+                            <td>{{ winner.draw_date.strftime('%d %b, %Y') }}</td>
                             <td class="fw-bold">{{ winner.user_name }}</td>
-                            <td>{{ winner.category }}</td>
-                            <td><span class="badge bg-success">#{{ winner.ticket_number }}</span></td>
+                            <td><span class="badge bg-secondary">{{ winner.category }}</span></td>
+                            <td><span class="text-info fw-bold">#{{ winner.ticket_number }}</span></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -118,23 +137,21 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <a href="https://wa.me" class="whatsapp-btn shadow-lg" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
     <script>
         function updateTimer() {
             const now = new Date();
             const drawTime = new Date();
-            drawTime.setHours(20, 0, 0, 0); // 8:00 PM
-
-            if (now > drawTime) {
-                drawTime.setDate(drawTime.getDate() + 1);
-            }
-
+            drawTime.setHours(20, 0, 0, 0); 
+            if (now > drawTime) drawTime.setDate(drawTime.getDate() + 1);
             const diff = drawTime - now;
-            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-            const mins = Math.floor((diff / (1000 * 60)) % 60);
-            const secs = Math.floor((diff / 1000) % 60);
-
-            document.getElementById('countdown').innerHTML = 
-                `Next Draw in: ${hours}h ${mins}m ${secs}s`;
+            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((diff / (1000 * 60)) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+            document.getElementById('countdown').innerHTML = `<i class="far fa-clock"></i> Next Draw in: ${h}h ${m}m ${s}s`;
         }
         setInterval(updateTimer, 1000);
         updateTimer();
@@ -163,7 +180,7 @@ def buy_ticket(cat_key):
     db.session.add(new_ticket)
     db.session.commit()
     
-    flash(f"Booking Success! Ticket #{t_num} for {name}")
+    flash(f"🎉 Awesome, {name}! Your ticket number is #{t_num}")
     return redirect(url_for('index'))
 
 # --- Startup ---
