@@ -3,18 +3,16 @@ import random
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_apscheduler import APScheduler
 
 app = Flask(__name__)
 
-# --- Railway Configuration ---
+# --- Railway Database Config ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'lottery.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'lottery_secret_key_2024'
 
 db = SQLAlchemy(app)
-scheduler = APScheduler()
 
 # --- Database Models ---
 class Ticket(db.Model):
@@ -38,22 +36,6 @@ CATEGORIES = {
     'flagship': {'name': 'Flagship Mobiles (High Cost)', 'price': 500}
 }
 
-# --- Draw Logic ---
-def run_lottery_draw():
-    with app.app_context():
-        for cat_key, info in CATEGORIES.items():
-            tickets = Ticket.query.filter_by(category=cat_key).all()
-            if tickets:
-                winner_ticket = random.choice(tickets)
-                new_winner = Winner(
-                    user_name=winner_ticket.user_name,
-                    category=info['name'],
-                    ticket_number=winner_ticket.ticket_number
-                )
-                db.session.add(new_winner)
-                Ticket.query.filter_by(category=cat_key).delete()
-        db.session.commit()
-
 # --- Routes ---
 @app.route('/')
 def index():
@@ -65,26 +47,43 @@ def index():
 
 @app.route('/buy/<cat_key>', methods=['POST'])
 def buy_ticket(cat_key):
-    name = request.form.get('name')
-    phone = request.form.get('phone')
-    address = request.form.get('address')
-    t_num = random.randint(100000, 999999)
-    
-    new_ticket = Ticket(user_name=name, phone_number=phone, address=address, 
-                        category=cat_key, ticket_number=t_num)
-    db.session.add(new_ticket)
-    db.session.commit()
-    
-    flash(f"Success! Your Ticket Number is {t_num}")
+    try:
+        name = request.form.get('name')
+        phone = request.form.get('phone')
+        address = request.form.get('address')
+        t_num = random.randint(100000, 999999)
+        
+        new_ticket = Ticket(user_name=name, phone_number=phone, address=address, 
+                            category=cat_key, ticket_number=t_num)
+        db.session.add(new_ticket)
+        db.session.commit()
+        flash(f"Success! Your Ticket Number is {t_num}")
+    except Exception as e:
+        db.session.rollback()
+        flash("Error! Please try again.")
     return redirect(url_for('index'))
 
-# --- App Init & Scheduler ---
+# Manual Draw Route (For Admin/Test)
+@app.route('/admin/draw')
+def run_draw():
+    for cat_key, info in CATEGORIES.items():
+        tickets = Ticket.query.filter_by(category=cat_key).all()
+        if tickets:
+            winner_ticket = random.choice(tickets)
+            new_winner = Winner(
+                user_name=winner_ticket.user_name,
+                category=info['name'],
+                ticket_number=winner_ticket.ticket_number
+            )
+            db.session.add(new_winner)
+            Ticket.query.filter_by(category=cat_key).delete()
+    db.session.commit()
+    return "Draw Completed! Check Homepage."
+
+# --- Initialize DB ---
 with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    if not scheduler.running:
-        scheduler.add_job(id='daily_draw', func=run_lottery_draw, trigger='cron', hour=20, minute=0)
-        scheduler.start()
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port)
