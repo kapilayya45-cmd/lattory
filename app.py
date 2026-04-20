@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_apscheduler import Scheduler
+from flask_apscheduler import APScheduler # Corrected import
 import random
 import os
 from datetime import datetime
@@ -20,7 +20,7 @@ class Config:
     SCHEDULER_API_ENABLED = True
 
 app.config.from_object(Config())
-scheduler = Scheduler()
+scheduler = APScheduler() # Corrected class name
 scheduler.init_app(app)
 scheduler.start()
 
@@ -81,7 +81,6 @@ def buy_ticket(cat_key):
     phone = request.form.get('phone')
     address = request.form.get('address')
     
-    # Generate 6-digit unique ticket number
     t_num = random.randint(100000, 999999)
     
     new_ticket = Ticket(
@@ -100,4 +99,5 @@ def buy_ticket(cat_key):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+    # Note: Flask runs locally, but gunicorn uses the app instance directly in production
     app.run(debug=True)
