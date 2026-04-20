@@ -1,93 +1,35 @@
 import os
 import random
-from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, request, redirect, flash
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret123'
 
-# --- Railway Configuration ---
-# Database file permissions fix
-basedir = os.path.abspath(os.path.dirname(__file__))
-db_path = os.path.join(basedir, 'lottery.db')
+# --- Simple Design (No HTML File Required) ---
+def get_html(message=""):
+    return f"""
+    <html>
+    <head><title>Mobile Lottery</title><meta name='viewport' content='width=device-width, initial-scale=1.0'><link rel='stylesheet' href='https://jsdelivr.net'></head>
+    <body class='bg-light'><div class='container mt-5 text-center'>
+        <div class='bg-primary text-white p-4 rounded shadow mb-4'><h1>📱 Daily Mobile Lottery</h1><p>Next Draw: 8:00 PM</p></div>
+        <div class='alert alert-info'>{message if message else 'Welcome! Buy your ticket below.'}</div>
+        <div class='row'>
+            <div class='col-md-4 mb-3'><div class='card p-3 shadow'><h4>Budget (Below 10k)</h4><p class='text-success fw-bold'>₹50</p><form method='POST' action='/buy/low'><input name='name' placeholder='Name' class='form-control mb-2' required><button class='btn btn-primary w-100'>Buy Ticket</button></form></div></div>
+            <div class='col-md-4 mb-3'><div class='card p-3 shadow'><h4>Mid-Range (Above 10k)</h4><p class='text-success fw-bold'>₹150</p><form method='POST' action='/buy/mid'><input name='name' placeholder='Name' class='form-control mb-2' required><button class='btn btn-primary w-100'>Buy Ticket</button></form></div></div>
+            <div class='col-md-4 mb-3'><div class='card p-3 shadow'><h4>Flagship (High Cost)</h4><p class='text-success fw-bold'>₹500</p><form method='POST' action='/buy/high'><input name='name' placeholder='Name' class='form-control mb-2' required><button class='btn btn-primary w-100'>Buy Ticket</button></form></div></div>
+        </div>
+    </div></body></html>
+    """
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'lottery_secret_999'
-
-db = SQLAlchemy(app)
-
-# --- Database Models ---
-class Ticket(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_name = db.Column(db.String(100))
-    phone_number = db.Column(db.String(15))
-    address = db.Column(db.Text)
-    category = db.Column(db.String(50))
-    ticket_number = db.Column(db.Integer, unique=True)
-
-class Winner(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_name = db.Column(db.String(100))
-    category = db.Column(db.String(100))
-    ticket_number = db.Column(db.Integer)
-    draw_date = db.Column(db.DateTime, default=datetime.utcnow)
-
-# Categories pricing
-CATEGORIES = {
-    'low_cost': {'name': 'Budget Mobiles (Below 10k)', 'price': 50},
-    'mid_range': {'name': 'Mid-Range Mobiles (Above 10k)', 'price': 150},
-    'flagship': {'name': 'Flagship Mobiles (High Cost)', 'price': 500}
-}
-
-# --- Database Initialization ---
-with app.app_context():
-    db.create_all()
-
-# --- Routes ---
 @app.route('/')
 def index():
-    try:
-        winners = Winner.query.order_by(Winner.draw_date.desc()).all()
-    except Exception:
-        winners = []
-    return render_template('index.html', categories=CATEGORIES, winners=winners)
+    return get_html()
 
-@app.route('/buy/<cat_key>', methods=['POST'])
-def buy_ticket(cat_key):
-    try:
-        name = request.form.get('name')
-        phone = request.form.get('phone')
-        address = request.form.get('address')
-        t_num = random.randint(100000, 999999)
-        
-        new_ticket = Ticket(user_name=name, phone_number=phone, address=address, 
-                            category=cat_key, ticket_number=t_num)
-        db.session.add(new_ticket)
-        db.session.commit()
-        flash(f"Success! Ticket Number: {t_num}")
-    except Exception:
-        db.session.rollback()
-        flash("Registration failed. Please try again.")
-    return redirect(url_for('index'))
-
-# Draw logic separate route for manual testing or external cron
-@app.route('/draw-winner-admin')
-def manual_draw():
-    # Only for simple trigger
-    for cat_key, info in CATEGORIES.items():
-        tickets = Ticket.query.filter_by(category=cat_key).all()
-        if tickets:
-            winner_ticket = random.choice(tickets)
-            new_winner = Winner(
-                user_name=winner_ticket.user_name,
-                category=info['name'],
-                ticket_number=winner_ticket.ticket_number
-            )
-            db.session.add(new_winner)
-            Ticket.query.filter_by(category=cat_key).delete()
-    db.session.commit()
-    return "Draw completed!"
+@app.route('/buy/<cat>', methods=['POST'])
+def buy(cat):
+    name = request.form.get('name')
+    t_num = random.randint(100000, 999999)
+    return get_html(f"Ticket Booked for {name}! Number: {t_num}")
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
