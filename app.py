@@ -6,11 +6,11 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# --- Railway Configuration ---
+# --- Configuration ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'lottery.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'lottery-super-secret-2024'
+app.config['SECRET_KEY'] = 'lottery-timer-secret-2024'
 
 db = SQLAlchemy(app)
 
@@ -36,7 +36,7 @@ CATEGORIES = {
     'flagship': {'name': 'Flagship Mobiles (High Cost)', 'price': 500}
 }
 
-# --- HTML Design with WhatsApp Button ---
+# --- HTML Design with Timer & WhatsApp ---
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html>
@@ -49,26 +49,25 @@ HTML_TEMPLATE = """
         body { background-color: #f4f7f6; font-family: 'Segoe UI', sans-serif; }
         .hero { background: linear-gradient(135deg, #6610f2, #6f42c1); color: white; padding: 50px 0; border-radius: 0 0 40px 40px; }
         .card { border-radius: 20px; border: none; transition: 0.3s; margin-bottom: 20px; }
-        .card:hover { transform: translateY(-10px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .card:hover { transform: translateY(-10px); }
         .price { font-size: 28px; color: #28a745; font-weight: bold; }
         .whatsapp-float {
             position: fixed; width: 60px; height: 60px; bottom: 40px; right: 40px;
             background-color: #25d366; color: #FFF; border-radius: 50px;
             text-align: center; font-size: 30px; box-shadow: 2px 2px 3px #999; z-index: 100;
         }
-        .whatsapp-float:hover { background-color: #128c7e; color: white; }
-        .badge-draw { background: #ffc107; color: #000; font-weight: bold; padding: 5px 15px; border-radius: 20px; }
+        #countdown { font-size: 1.5rem; font-weight: bold; color: #ffc107; background: rgba(0,0,0,0.2); padding: 10px 20px; border-radius: 30px; display: inline-block; margin-top: 15px; }
     </style>
 </head>
 <body>
-    <a href="https://wa.me, I want to join the lottery!" class="whatsapp-float" target="_blank">
+    <a href="https://wa.me" class="whatsapp-float" target="_blank">
         <i class="fab fa-whatsapp" style="margin-top:16px;"></i>
     </a>
 
     <div class="hero text-center mb-5 shadow">
         <h1>📱 Daily Mobile Lottery</h1>
-        <p>Win Smartphones at Fraction of Price</p>
-        <span class="badge-draw">Next Draw: 8:00 PM Tonight</span>
+        <p>Win Premium Smartphones Every Day!</p>
+        <div id="countdown">Loading Timer...</div>
     </div>
 
     <div class="container">
@@ -90,7 +89,7 @@ HTML_TEMPLATE = """
                         <input type="text" name="name" placeholder="Your Name" class="form-control mb-2" required>
                         <input type="text" name="phone" placeholder="WhatsApp Number" class="form-control mb-2" required>
                         <textarea name="address" placeholder="Shipping Address" class="form-control mb-2" rows="2" required></textarea>
-                        <button type="submit" class="btn btn-primary w-100 fw-bold">BOOK TICKET</button>
+                        <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">BOOK TICKET</button>
                     </form>
                 </div>
             </div>
@@ -118,6 +117,28 @@ HTML_TEMPLATE = """
             </div>
         </div>
     </div>
+
+    <script>
+        function updateTimer() {
+            const now = new Date();
+            const drawTime = new Date();
+            drawTime.setHours(20, 0, 0, 0); // 8:00 PM
+
+            if (now > drawTime) {
+                drawTime.setDate(drawTime.getDate() + 1);
+            }
+
+            const diff = drawTime - now;
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const mins = Math.floor((diff / (1000 * 60)) % 60);
+            const secs = Math.floor((diff / 1000) % 60);
+
+            document.getElementById('countdown').innerHTML = 
+                `Next Draw in: ${hours}h ${mins}m ${secs}s`;
+        }
+        setInterval(updateTimer, 1000);
+        updateTimer();
+    </script>
 </body>
 </html>
 """
@@ -129,7 +150,7 @@ def index():
         winners = Winner.query.order_by(Winner.draw_date.desc()).limit(10).all()
     except:
         winners = []
-    return render_template_string(HTML_TEMPLATE, categories=CATEGORIES, winners=winners, whatsapp_num="91XXXXXXXXXX")
+    return render_template_string(HTML_TEMPLATE, categories=CATEGORIES, winners=winners)
 
 @app.route('/buy/<cat_key>', methods=['POST'])
 def buy_ticket(cat_key):
@@ -145,20 +166,7 @@ def buy_ticket(cat_key):
     flash(f"Booking Success! Ticket #{t_num} for {name}")
     return redirect(url_for('index'))
 
-@app.route('/admin/draw')
-def run_draw():
-    # Only for admin to trigger winners
-    for cat_key, info in CATEGORIES.items():
-        tickets = Ticket.query.filter_by(category=cat_key).all()
-        if tickets:
-            winner_ticket = random.choice(tickets)
-            new_winner = Winner(user_name=winner_ticket.user_name, category=info['name'], ticket_number=winner_ticket.ticket_number)
-            db.session.add(new_winner)
-            Ticket.query.filter_by(category=cat_key).delete()
-    db.session.commit()
-    return "Winners announced successfully!"
-
-# --- App Initialize ---
+# --- Startup ---
 with app.app_context():
     db.create_all()
 
