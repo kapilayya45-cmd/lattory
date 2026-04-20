@@ -11,7 +11,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, 'lottery.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'smart-win-final-pro-9121'
+app.config['SECRET_KEY'] = 'smart-win-pro-winners-9121'
 
 db = SQLAlchemy(app)
 
@@ -23,7 +23,7 @@ class MobileConfig(db.Model):
     specs = db.Column(db.String(255))
     price = db.Column(db.Integer)
     color = db.Column(db.String(20))
-    image_url = db.Column(db.String(500)) # Admin can change this
+    image_url = db.Column(db.String(500))
 
 class Ticket(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -59,6 +59,8 @@ USER_HTML = """
         .price-badge { position: absolute; top: 15px; right: 15px; background: #238636; padding: 5px 12px; border-radius: 8px; font-weight: bold; z-index: 5; }
         .mobile-img { width: 100%; height: 180px; object-fit: contain; background: #0d1117; padding: 10px; }
         .whatsapp-float { position: fixed; bottom: 30px; right: 30px; background: #25d366; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; text-decoration: none; box-shadow: 0 10px 20px rgba(0,0,0,0.3); z-index: 1000; }
+        .winner-card { background: rgba(255, 215, 0, 0.05); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 15px; }
+        .badge-winner { background: #ffc107; color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -66,10 +68,34 @@ USER_HTML = """
     """ + NAVBAR + """
     <div class="hero text-center mb-4">
         <h1 class="fw-bold">Premium Mobile Lottery</h1>
-        <p class="text-muted">Win High-End Smartphones Every Day!</p>
+        <p class="text-muted">Enter now to win the latest smartphones daily at 8 PM.</p>
     </div>
+    
     <div class="container">
         {% with messages = get_flashed_messages() %}{% if messages %}{% for m in messages %}<div class="alert alert-success text-center shadow">{{m}}</div>{% endfor %}{% endif %}{% endwith %}
+        
+        <!-- Hall of Fame (Winners) -->
+        {% if winners %}
+        <div class="winner-card p-4 mb-5 shadow-sm text-center">
+            <h2 class="h4 mb-3 text-warning"><i class="fas fa-trophy"></i> Hall of Fame: Recent Winners</h2>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover border-0 mb-0">
+                    <thead><tr class="text-muted small"><th>Date</th><th>Winner</th><th>Device Won</th><th>Ticket #</th></tr></thead>
+                    <tbody>
+                        {% for w in winners %}
+                        <tr class="align-middle">
+                            <td>{{ w.draw_date.strftime('%d %b') }}</td>
+                            <td class="fw-bold">{{ w.user_name }}</td>
+                            <td><span class="badge bg-secondary">{{ w.category }}</span></td>
+                            <td class="text-info fw-bold">#{{ w.ticket_number }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
         <div class="row">
             {% for m in models %}
             <div class="col-md-4">
@@ -108,28 +134,28 @@ ADMIN_HTML = """
         <div class="row">
             <div class="col-md-12 mb-4">
                 <div class="card p-3 shadow-sm">
-                    <h4>Active Tickets</h4>
+                    <h4>Active Tickets (Current Draw)</h4>
                     <div class="table-responsive">
                     <table class="table table-sm mt-2">
                         <thead><tr><th>Name</th><th>Phone</th><th>Category</th><th>Ticket</th></tr></thead>
                         <tbody>{% for t in tickets %}<tr><td>{{t.user_name}}</td><td>{{t.phone_number}}</td><td>{{t.category}}</td><td>#{{t.ticket_number}}</td></tr>{% endfor %}</tbody>
                     </table>
                     </div>
-                    <a href="/admin/draw" class="btn btn-warning w-100 fw-bold mt-2" onclick="return confirm('Confirm Draw?')">RUN DRAW & RESET ALL</a>
+                    <a href="/admin/draw" class="btn btn-warning w-100 fw-bold mt-2" onclick="return confirm('Pick winners and CLEAR current tickets?')">RUN DRAW & PICK WINNERS</a>
                 </div>
             </div>
             <div class="col-md-12">
-                <h4>Update Mobiles & Images</h4>
+                <h4>Manage Models & Images</h4>
                 <div class="row">
                 {% for m in models %}
                 <div class="col-md-4">
                 <form action="/admin/update/{{m.category_key}}" method="POST" class="card p-3 mb-3 shadow-sm border-0">
                     <label class="badge bg-secondary mb-2">{{ m.category_key }}</label>
-                    <input name="model" value="{{m.model_name}}" class="form-control mb-1" placeholder="Model Name">
-                    <input name="specs" value="{{m.specs}}" class="form-control mb-1" placeholder="Specs">
-                    <input name="price" value="{{m.price}}" class="form-control mb-1" placeholder="Price">
-                    <input name="image" value="{{m.image_url}}" class="form-control mb-1" placeholder="Image URL">
-                    <button class="btn btn-primary btn-sm w-100 mt-2">Save Updates</button>
+                    <input name="model" value="{{m.model_name}}" class="form-control mb-1">
+                    <input name="specs" value="{{m.specs}}" class="form-control mb-1">
+                    <input name="price" value="{{m.price}}" class="form-control mb-1">
+                    <input name="image" value="{{m.image_url}}" class="form-control mb-1">
+                    <button class="btn btn-primary btn-sm w-100 mt-2">Update</button>
                 </form>
                 </div>
                 {% endfor %}
@@ -145,7 +171,8 @@ ADMIN_HTML = """
 @app.route('/')
 def index():
     models = MobileConfig.query.all()
-    return render_template_string(USER_HTML, models=models)
+    winners = Winner.query.order_by(Winner.draw_date.desc()).limit(5).all()
+    return render_template_string(USER_HTML, models=models, winners=winners)
 
 @app.route('/buy/<cat>', methods=['POST'])
 def buy(cat):
@@ -182,14 +209,15 @@ def update_mobile(cat):
 @app.route('/admin/draw')
 def run_draw():
     if not session.get('logged_in'): return redirect('/admin')
+    # Pick a random winner from ALL tickets
     tickets = Ticket.query.all()
     if tickets:
-        winner = random.choice(tickets)
-        new_w = Winner(user_name=winner.user_name, category=winner.category, ticket_number=winner.ticket_number)
+        w = random.choice(tickets)
+        new_w = Winner(user_name=w.user_name, category=w.category, ticket_number=w.ticket_number)
         db.session.add(new_w)
-    Ticket.query.delete() 
-    db.session.commit()
-    flash("Draw Successful!")
+        Ticket.query.delete() # Clear for next draw
+        db.session.commit()
+        flash("Winner selected and Tickets cleared!")
     return redirect('/admin')
 
 @app.route('/logout')
@@ -197,13 +225,13 @@ def logout():
     session.pop('logged_in', None)
     return redirect('/')
 
-# --- Startup & DB Setup ---
+# --- Database Startup ---
 with app.app_context():
     db.create_all()
     if not MobileConfig.query.first():
         configs = [
             MobileConfig(category_key='low_cost', model_name='Redmi 13C', specs='5000mAh, 50MP', price=50, color='#21d4fd', image_url='https://media-amazon.com'),
-            MobileConfig(category_key='mid_range', model_name='OnePlus Nord CE 4', specs='100W SuperVOOC, AMOLED', price=150, color='#b721ff', image_url='https://media-amazon.com'),
+            MobileConfig(category_key='mid_range', model_name='OnePlus Nord CE 4', specs='100W, AMOLED', price=150, color='#b721ff', image_url='https://media-amazon.com'),
             MobileConfig(category_key='flagship', model_name='iPhone 15', specs='A16 Bionic, 48MP Camera', price=500, color='#ff4b2b', image_url='https://media-amazon.com')
         ]
         db.session.bulk_save_objects(configs)
