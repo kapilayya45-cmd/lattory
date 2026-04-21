@@ -11,7 +11,7 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, 'lottery.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SECRET_KEY'] = 'image-fix-ultra-2024'
+app.config['SECRET_KEY'] = 'ultra-stylish-v2-9121'
 
 db = SQLAlchemy(app)
 
@@ -40,35 +40,40 @@ class Winner(db.Model):
     ticket_number = db.Column(db.Integer)
     draw_date = db.Column(db.DateTime, default=datetime.utcnow)
 
-# --- Ultra Stylish UI with Forced Image Reload ---
+# --- Ultra Stylish UI ---
 USER_HTML = """
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SMART-WIN | Modern Lottery</title>
+    <title>SMART-WIN | Ultra Modern</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://jsdelivr.net">
     <link rel="stylesheet" href="https://cloudflare.com">
     <style>
         @import url('https://googleapis.com');
         body { background: #050505; color: #fff; font-family: 'Inter', sans-serif; }
-        .hero { padding: 40px 0; text-align: center; }
-        .hero h1 { font-family: 'Syncopate', sans-serif; font-size: 2rem; color: #00f2ff; text-shadow: 0 0 10px #00f2ff; }
+        .hero { padding: 60px 0; text-align: center; }
+        .hero h1 { font-family: 'Syncopate', sans-serif; font-size: 2.2rem; color: #00f2ff; text-shadow: 0 0 15px #00f2ff; letter-spacing: 5px; }
         
-        .timer-box { background: rgba(255,255,255,0.05); border: 1px solid #00f2ff; padding: 10px 20px; border-radius: 50px; display: inline-block; margin-top: 15px; }
-        #countdown { font-size: 1.5rem; font-weight: 800; color: #fff; }
+        .timer-box { background: rgba(255,255,255,0.03); border: 1px solid #00f2ff; padding: 12px 25px; border-radius: 50px; display: inline-block; margin-top: 20px; box-shadow: 0 0 15px rgba(0,242,255,0.1); }
+        #countdown { font-size: 1.6rem; font-weight: 800; color: #fff; }
 
-        .card-lottery { background: #111; border: 1px solid #222; border-radius: 20px; overflow: hidden; margin-bottom: 30px; position: relative; }
-        .price-badge { position: absolute; top: 15px; right: 15px; background: #00f2ff; color: #000; padding: 3px 10px; border-radius: 50px; font-weight: 800; z-index: 10; }
+        .card-lottery { background: #111; border: 1px solid #222; border-radius: 30px; transition: 0.3s; overflow: hidden; margin-bottom: 30px; position: relative; }
+        .card-lottery:hover { transform: translateY(-8px); border-color: #00f2ff; box-shadow: 0 0 30px rgba(0,242,255,0.15); }
+        .price-badge { position: absolute; top: 15px; right: 15px; background: #00f2ff; color: #000; padding: 4px 15px; border-radius: 50px; font-weight: 800; z-index: 10; }
         
-        .img-container { background: #fff; height: 200px; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 10px; }
-        .mobile-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        /* IMAGE BOX FIX */
+        .img-box { background: #fff; height: 220px; display: flex; align-items: center; justify-content: center; padding: 10px; }
+        .mobile-img { max-width: 100%; max-height: 100%; object-fit: contain; filter: drop-shadow(0 5px 15px rgba(0,0,0,0.2)); }
         
-        .btn-buy { background: #fff; color: #000; font-weight: 800; border-radius: 10px; padding: 10px; border: none; width: 100%; transition: 0.3s; }
-        .btn-buy:hover { background: #00f2ff; box-shadow: 0 0 15px #00f2ff; }
+        .btn-buy { background: #fff; color: #000; font-weight: 800; border-radius: 15px; padding: 12px; border: none; width: 100%; transition: 0.3s; }
+        .btn-buy:hover { background: #00f2ff; box-shadow: 0 0 20px #00f2ff; letter-spacing: 1px; }
+        .whatsapp-float { position: fixed; bottom: 30px; right: 30px; background: #25d366; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; text-decoration: none; z-index: 1000; box-shadow: 0 0 20px rgba(37,211,102,0.4); }
     </style>
 </head>
 <body>
+    <a href="https://wa.me" class="whatsapp-float" target="_blank"><i class="fab fa-whatsapp"></i></a>
+
     <div class="hero">
         <div class="container">
             <h1>SMART-WIN</h1>
@@ -78,7 +83,7 @@ USER_HTML = """
 
     <div class="container mt-4">
         {% with messages = get_flashed_messages() %}{% if messages %}{% for m in messages %}
-            <div class="alert alert-info bg-dark text-info text-center rounded-pill mb-4 border-info small">{{m}}</div>
+            <div class="alert alert-info bg-dark border-info text-info text-center rounded-pill mb-4">{{m}}</div>
         {% endfor %}{% endif %}{% endwith %}
 
         <div class="row">
@@ -86,15 +91,15 @@ USER_HTML = """
             <div class="col-md-4">
                 <div class="card card-lottery">
                     <div class="price-badge">₹{{ m.price }}</div>
-                    <div class="img-container">
-                        <img src="{{ m.image_url }}" class="mobile-img" alt="Mobile Image">
+                    <div class="img-box">
+                        <img src="{{ m.image_url }}" onerror="this.src='https://placeholder.com'" class="mobile-img">
                     </div>
-                    <div class="p-4">
-                        <h3 class="h6 fw-bold" style="color: {{m.color}}">{{ m.model_name }}</h3>
+                    <div class="p-4 pt-0">
+                        <h3 class="h5 fw-bold mt-3" style="color: {{m.color}}">{{ m.model_name }}</h3>
                         <p class="text-secondary small mb-3">{{ m.specs }}</p>
                         <form action="/buy/{{ m.category_key }}" method="POST">
-                            <input name="name" placeholder="Name" class="form-control bg-dark border-secondary text-white mb-2" required>
-                            <input name="phone" placeholder="WhatsApp" class="form-control bg-dark border-secondary text-white mb-2" required>
+                            <input name="name" placeholder="Full Name" class="form-control bg-dark border-secondary text-white mb-2" required>
+                            <input name="phone" placeholder="WhatsApp Number" class="form-control bg-dark border-secondary text-white mb-2" required>
                             <textarea name="address" placeholder="Address" class="form-control bg-dark border-secondary text-white mb-3" rows="1" required></textarea>
                             <button class="btn-buy">GET TICKET</button>
                         </form>
@@ -123,7 +128,50 @@ USER_HTML = """
 </html>
 """
 
-# --- Startup & Admin ---
+# --- Admin Section ---
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    if request.method == 'POST' and request.form.get('password') == 'admin123':
+        session['logged_in'] = True
+        return redirect('/admin')
+    if not session.get('logged_in'):
+        return '<body style="background:#000;color:#fff;text-align:center;padding:50px;"><form method="POST">ADMIN KEY: <input name="password" type="password"><button>LOGIN</button></form></body>'
+    
+    tickets = Ticket.query.all()
+    models = MobileConfig.query.all()
+    return render_template_string(ADMIN_UI, tickets=tickets, models=models)
+
+ADMIN_UI = """
+<!DOCTYPE html><html><head><link rel="stylesheet" href="https://jsdelivr.net"></head>
+<body class="bg-dark text-white p-4">
+    <div class="container">
+        <h3>Admin Dashboard <a href="/logout" class="btn btn-danger btn-sm float-end">Logout</a></h3><hr>
+        <div class="row">
+            <div class="col-md-8">
+                <h4>Today's Bookings</h4>
+                <table class="table table-dark"><thead><tr><th>Name</th><th>Phone</th><th>Ticket</th></tr></thead>
+                <tbody>{% for t in tickets %}<tr><td>{{t.user_name}}</td><td>{{t.phone_number}}</td><td>#{{t.ticket_number}}</td></tr>{% endfor %}</tbody></table>
+                <a href="/admin/draw" class="btn btn-info w-100 fw-bold">RUN DRAW</a>
+            </div>
+            <div class="col-md-4">
+                <h4>Mobile Catalog</h4>
+                {% for m in models %}
+                <form action="/admin/update/{{m.category_key}}" method="POST" class="card bg-secondary p-3 mb-2 border-0">
+                    <small>{{m.category_key}}</small>
+                    <input name="model" value="{{m.model_name}}" class="form-control mb-1">
+                    <input name="specs" value="{{m.specs}}" class="form-control mb-1">
+                    <input name="price" value="{{m.price}}" class="form-control mb-1">
+                    <label class="small mt-1">Image URL Link:</label>
+                    <input name="image" value="{{m.image_url}}" class="form-control mb-1">
+                    <button class="btn btn-dark btn-sm w-100 mt-2">Save Updates</button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+    </div></body></html>
+"""
+
+# --- Routes Logic ---
 @app.route('/')
 def index():
     models = MobileConfig.query.all()
@@ -135,47 +183,16 @@ def buy(cat):
     new_t = Ticket(user_name=request.form['name'], phone_number=request.form['phone'], address=request.form['address'], category=cat, ticket_number=t_num)
     db.session.add(new_t)
     db.session.commit()
-    flash(f"BOOKED! TICKET #{t_num}")
+    flash(f"TICKET # {t_num} RESERVED SUCCESSFULLY!")
     return redirect('/')
-
-@app.route('/admin', methods=['GET', 'POST'])
-def admin():
-    if request.method == 'POST' and request.form.get('password') == 'admin123':
-        session['logged_in'] = True
-        return redirect('/admin')
-    if not session.get('logged_in'):
-        return '<body style="background:#000;color:#fff;text-align:center;padding:50px;"><form method="POST">ADMIN KEY: <input name="password" type="password"><button>LOGIN</button></form></body>'
-    
-    tickets = Ticket.query.all()
-    models = MobileConfig.query.all()
-    return render_template_string("""
-        <!DOCTYPE html><html><head><link rel="stylesheet" href="https://jsdelivr.net"></head>
-        <body class="bg-dark text-white p-4"><div class="container">
-        <h3>Admin Panel <a href="/logout" class="btn btn-danger btn-sm float-end">Logout</a></h3><hr>
-        <div class="row">
-            <div class="col-md-8">
-                <h4>Tickets</h4>
-                <table class="table table-dark"><tbody>{% for t in tickets %}<tr><td>{{t.user_name}}</td><td>{{t.phone_number}}</td><td>#{{t.ticket_number}}</td></tr>{% endfor %}</tbody></table>
-                <a href="/admin/draw" class="btn btn-info w-100">RUN DRAW</a>
-            </div>
-            <div class="col-md-4">
-                <h4>Mobiles</h4>
-                {% for m in models %}
-                <form action="/admin/update/{{m.category_key}}" method="POST" class="card bg-secondary p-2 mb-2">
-                    <input name="model" value="{{m.model_name}}" class="form-control mb-1">
-                    <input name="image" value="{{m.image_url}}" class="form-control mb-1">
-                    <button class="btn btn-dark btn-sm w-100">Update</button>
-                </form>
-                {% endfor %}
-            </div>
-        </div></div></body></html>
-    """, tickets=tickets, models=models)
 
 @app.route('/admin/update/<cat>', methods=['POST'])
 def update_mobile(cat):
     if not session.get('logged_in'): return redirect('/admin')
     m = MobileConfig.query.filter_by(category_key=cat).first()
     m.model_name = request.form['model']
+    m.specs = request.form['specs']
+    m.price = int(request.form['price'])
     m.image_url = request.form['image']
     db.session.commit()
     return redirect('/admin')
@@ -192,17 +209,17 @@ def logout():
     session.pop('logged_in', None)
     return redirect('/')
 
-# --- Database Startup Fix ---
+# --- Startup Fix ---
 with app.app_context():
-    db.drop_all() # Reset DB to ensure images load
     db.create_all()
-    configs = [
-        MobileConfig(category_key='low_cost', model_name='Redmi 13C', specs='5000mAh, 50MP', price=50, color='#00f2ff', image_url='https://media-amazon.com'),
-        MobileConfig(category_key='mid_range', model_name='OnePlus Nord CE 4', specs='100W SuperVOOC', price=150, color='#b721ff', image_url='https://media-amazon.com'),
-        MobileConfig(category_key='flagship', model_name='iPhone 15 Pro', specs='Titanium Build', price=500, color='#ff4b2b', image_url='https://media-amazon.com')
-    ]
-    db.session.bulk_save_objects(configs)
-    db.session.commit()
+    if not MobileConfig.query.first():
+        configs = [
+            MobileConfig(category_key='low_cost', model_name='Redmi 13C', specs='5000mAh Power', price=50, color='#00f2ff', image_url='https://media-amazon.com'),
+            MobileConfig(category_key='mid_range', model_name='OnePlus Nord CE 4', specs='100W Charging', price=150, color='#b721ff', image_url='https://media-amazon.com'),
+            MobileConfig(category_key='flagship', model_name='iPhone 15 Pro', specs='Titanium Build', price=500, color='#ff4b2b', image_url='https://media-amazon.com')
+        ]
+        db.session.bulk_save_objects(configs)
+        db.session.commit()
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 8080))
