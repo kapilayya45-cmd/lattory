@@ -4,17 +4,21 @@ from datetime import datetime
 from flask import Flask, request, redirect, url_for, flash, render_template_string
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'smart-win-ultra-final-v10'
+app.config['SECRET_KEY'] = 'smart-win-final-ultra-stylish-v11'
 
-# --- మొబైల్ వివరాలు మరియు ఇమేజ్ లింక్స్ ---
-CATEGORIES = {
+# --- ఇమేజ్ రావడానికి ప్రాక్సీ సర్వర్ వాడుతున్నాను (Guaranteed Fix) ---
+def get_safe_url(img_url):
+    return f"https://weserv.nl{img_url}&w=500&fit=contain&bg=white"
+
+# --- మీ అమేజాన్ ఇమేజ్ లింక్స్ ఇక్కడ ఉన్నాయి ---
+RAW_DATA = {
     'low_cost': {
         'name': 'Budget Kings', 
         'model': 'Redmi 13C', 
         'specs': '5000mAh Battery | 50MP AI Camera | 8GB RAM',
         'price': 50, 
         'color': '#00f2ff',
-        'image_url': 'https://media-amazon.com'
+        'img': 'https://media-amazon.com'
     },
     'mid_range': {
         'name': 'Mid-Range Beasts', 
@@ -22,7 +26,7 @@ CATEGORIES = {
         'specs': '100W Charging | AMOLED 120Hz | Sony Sensor',
         'price': 150, 
         'color': '#b721ff',
-        'image_url': 'https://media-amazon.com'
+        'img': 'https://media-amazon.com'
     },
     'flagship': {
         'name': 'Premium Flagships', 
@@ -30,11 +34,14 @@ CATEGORIES = {
         'specs': 'Titanium Build | A17 Pro Chip | 48MP Pro Camera',
         'price': 500, 
         'color': '#ff4b2b',
-        'image_url': 'https://media-amazon.com'
+        'img': 'https://media-amazon.com'
     }
 }
 
-# --- UI Template (Forced Layout & Image Security Bypass) ---
+# Generate Proxy Links
+CATEGORIES = {k: {**v, 'image_url': get_safe_url(v['img'])} for k, v in RAW_DATA.items()}
+
+# --- UI Template (Forced Layout + Image Display) ---
 USER_HTML = """
 <!DOCTYPE html>
 <html lang="te">
@@ -54,7 +61,7 @@ USER_HTML = """
         .timer-box { background: rgba(255,255,255,0.03); border: 1px solid #00f2ff; padding: 10px 25px; border-radius: 50px; display: inline-block; margin-top: 15px; }
         #countdown { font-size: 1.5rem; font-weight: 800; color: #fff; }
 
-        /* Split Card Styling: Right(Image), Left(Details) */
+        /* Split Card Design */
         .card-split { 
             background: #111; 
             border: 1px solid #222; 
@@ -62,50 +69,48 @@ USER_HTML = """
             overflow: hidden; 
             margin-bottom: 40px; 
             display: flex; 
-            flex-direction: row-reverse; 
+            flex-direction: row-reverse; /* Right: Image, Left: Detail */
             flex-wrap: wrap; 
-            transition: 0.4s;
         }
-        .card-split:hover { border-color: #00f2ff; box-shadow: 0 0 25px rgba(0,242,255,0.1); }
         
-        /* Image Side (White Box Fix) */
+        /* Image Box - Pure White for Contrast */
         .img-side { 
             flex: 1; 
-            background: #fff; 
+            background: #ffffff; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            padding: 20px; 
+            padding: 30px; 
             min-width: 300px; 
-            min-height: 380px; 
+            min-height: 400px; 
         }
-        .mobile-img { 
-            max-width: 100%; 
-            max-height: 350px; 
-            object-fit: contain; 
-            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.1));
-            display: block;
+        .mobile-img { max-width: 100%; max-height: 380px; object-fit: contain; }
+        
+        /* Detail Side */
+        .detail-side { 
+            flex: 1.2; 
+            padding: 45px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center; 
+            min-width: 300px; 
         }
+        .price-badge { background: #00f2ff; color: #000; padding: 6px 20px; border-radius: 50px; font-weight: 800; font-size: 1.3rem; width: fit-content; margin-bottom: 15px; }
         
-        /* Details Side */
-        .detail-side { flex: 1.2; padding: 40px; display: flex; flex-direction: column; justify-content: center; min-width: 300px; }
-        .price-badge { background: #00f2ff; color: #000; padding: 6px 20px; border-radius: 50px; font-weight: 800; font-size: 1.2rem; width: fit-content; margin-bottom: 15px; box-shadow: 0 0 10px #00f2ff; }
-        
-        /* Form Box Overlap Fix */
+        /* Form Box - Guaranteed No Overlap */
+        .form-group { width: 100%; margin-bottom: 15px; }
         .form-control { 
             background: #1a1a1a !important; 
             border: 1px solid #333 !important; 
             color: #fff !important; 
             border-radius: 12px !important; 
-            margin-bottom: 12px !important; 
-            padding: 12px !important;
-            width: 100% !important;
+            padding: 14px !important;
             display: block !important;
+            width: 100% !important;
         }
-        .form-control:focus { border-color: #00f2ff !important; box-shadow: none !important; }
         
         .btn-buy { background: #fff; color: #000; font-weight: 800; border-radius: 12px; padding: 15px; border: none; width: 100%; text-transform: uppercase; transition: 0.3s; margin-top: 10px; }
-        .btn-buy:hover { background: #00f2ff; transform: scale(1.02); }
+        .btn-buy:hover { background: #00f2ff; transform: scale(1.02); box-shadow: 0 0 20px #00f2ff; }
 
         .payment-alert { background: #111; border: 1px solid #28a745; color: #fff; border-radius: 25px; padding: 30px; margin-bottom: 40px; }
 
@@ -142,27 +147,31 @@ USER_HTML = """
         {% endfor %}{% endif %}{% endwith %}
 
         {% for key, info in cats.items() %}
-        <div class="card-split shadow">
-            <!-- RIGHT SIDE: IMAGE WITH SECURITY BYPASS -->
+        <div class="card-split">
+            <!-- RIGHT SIDE: IMAGE -->
             <div class="img-side">
                 <img src="{{ info.image_url }}" 
-                     referrerpolicy="no-referrer" 
-                     onerror="this.src='https://weserv.nl{{ info.image_url }}&w=400&errorredirect=https://placeholder.com{{ info.model }}'" 
-                     class="mobile-img" 
-                     alt="Mobile Phone">
+                     onerror="this.src='https://placeholder.com{{ info.model }}'" 
+                     class="mobile-img">
             </div>
             
             <!-- LEFT SIDE: DETAILS & FORM -->
             <div class="detail-side">
                 <div class="price-badge">₹{{ info.price }} ONLY</div>
-                <h2 class="fw-bold mb-1" style="color: {{info.color}}">{{ info.name }}</h2>
-                <p class="text-secondary small mb-4" style="border-left: 3px solid {{info.color}}; padding-left: 15px;">{{ info.specs }}</p>
+                <h2 class="fw-bold mb-1" style="color: #00f2ff">{{ info.name }}</h2>
+                <p class="text-secondary small mb-4" style="border-left: 3px solid #00f2ff; padding-left: 15px;">{{ info.specs }}</p>
                 
                 <form action="/buy/{{ key }}" method="POST">
-                    <input name="name" placeholder="ENTER FULL NAME" class="form-control" required>
-                    <input name="phone" placeholder="WHATSAPP NUMBER" class="form-control" required>
-                    <textarea name="address" placeholder="COMPLETE DELIVERY ADDRESS" class="form-control" rows="2" required></textarea>
-                    <button class="btn-buy shadow">BOOK & PAY NOW</button>
+                    <div class="form-group">
+                        <input name="name" placeholder="ENTER FULL NAME" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <input name="phone" placeholder="WHATSAPP NUMBER" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <textarea name="address" placeholder="COMPLETE DELIVERY ADDRESS" class="form-control" rows="2" required></textarea>
+                    </div>
+                    <button class="btn-buy">BOOK & PAY NOW</button>
                 </form>
             </div>
         </div>
