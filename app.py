@@ -4,17 +4,21 @@ from datetime import datetime
 from flask import Flask, request, redirect, url_for, flash, render_template_string
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'smart-win-image-bypass-v7'
+app.config['SECRET_KEY'] = 'smart-win-ultra-guaranteed-fix'
+
+# --- ఇమేజ్ ప్రాక్సీ ట్రిక్ యాడ్ చేశాను ---
+def get_proxy_url(url):
+    return f"https://wsrv.nl{url}"
 
 # --- మీ అమేజాన్ ఇమేజ్ లింక్స్ ఇక్కడ ఉన్నాయి ---
-CATEGORIES = {
+RAW_CATEGORIES = {
     'low_cost': {
         'name': 'Budget Kings', 
         'model': 'Redmi 13C', 
         'specs': '5000mAh Battery | 50MP AI Camera | 8GB RAM',
         'price': 50, 
         'color': '#00f2ff',
-        'image_url': 'https://media-amazon.com'
+        'url': 'https://media-amazon.com'
     },
     'mid_range': {
         'name': 'Mid-Range Beasts', 
@@ -22,7 +26,7 @@ CATEGORIES = {
         'specs': '100W Charging | AMOLED 120Hz | Sony Sensor',
         'price': 150, 
         'color': '#b721ff',
-        'image_url': 'https://media-amazon.com'
+        'url': 'https://media-amazon.com'
     },
     'flagship': {
         'name': 'Premium Flagships', 
@@ -30,11 +34,14 @@ CATEGORIES = {
         'specs': 'Titanium Build | A17 Pro Chip | 48MP Pro Camera',
         'price': 500, 
         'color': '#ff4b2b',
-        'image_url': 'https://media-amazon.com'
+        'url': 'https://media-amazon.com'
     }
 }
 
-# --- UI Template (Image Fix + No-Overlap Form) ---
+# ప్రాక్సీ లింక్స్‌ని జనరేట్ చేయడం
+CATEGORIES = {k: {**v, 'image_url': get_proxy_url(v['url'])} for k, v in RAW_CATEGORIES.items()}
+
+# --- UI Template (Guaranteed No-Overlap & Image Display) ---
 USER_HTML = """
 <!DOCTYPE html>
 <html lang="te">
@@ -44,85 +51,45 @@ USER_HTML = """
     <link rel="stylesheet" href="https://jsdelivr.net">
     <style>
         @import url('https://googleapis.com');
-        
         body { background: #050505; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        
-        /* Header */
-        .hero { padding: 40px 0; text-align: center; border-bottom: 1px solid #222; background: radial-gradient(circle at top, #111 0%, #050505 100%); }
+        .hero { padding: 40px 0; text-align: center; border-bottom: 1px solid #222; }
         .hero h1 { font-family: 'Syncopate', sans-serif; font-size: 2rem; color: #00f2ff; text-shadow: 0 0 15px #00f2ff; letter-spacing: 5px; }
-        
-        /* Timer */
         .timer-box { background: rgba(255,255,255,0.03); border: 1px solid #00f2ff; padding: 10px 25px; border-radius: 50px; display: inline-block; margin-top: 15px; }
         #countdown { font-size: 1.6rem; font-weight: 800; color: #fff; }
-
-        /* Split Card */
+        
         .card-split { 
-            background: #111; 
-            border: 1px solid #222; 
-            border-radius: 35px; 
-            overflow: hidden; 
-            margin-bottom: 50px; 
-            display: flex; 
-            flex-direction: row-reverse; 
-            flex-wrap: wrap; 
+            background: #111; border: 1px solid #222; border-radius: 35px; overflow: hidden; margin-bottom: 50px; 
+            display: flex; flex-direction: row-reverse; flex-wrap: wrap; 
         }
         
-        /* Image Container Fix */
+        /* ఇమేజ్ వైట్ బాక్స్ లో ఖచ్చితంగా కనిపిస్తుంది */
         .img-side { 
-            flex: 1; 
-            background: #fff; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            padding: 20px; 
-            min-width: 300px; 
-            min-height: 350px; 
+            flex: 1; background: #fff; display: flex; align-items: center; justify-content: center; 
+            padding: 20px; min-width: 300px; height: 400px;
         }
-        .mobile-img { 
-            max-width: 100%; 
-            max-height: 380px; 
-            object-fit: contain; 
-            display: block;
-        }
+        .mobile-img { max-width: 100%; max-height: 100%; object-fit: contain; }
         
-        /* Details Side */
         .detail-side { flex: 1.2; padding: 40px; display: flex; flex-direction: column; justify-content: center; min-width: 300px; }
         .price-badge { background: #00f2ff; color: #000; padding: 6px 20px; border-radius: 50px; font-weight: 800; font-size: 1.2rem; width: fit-content; margin-bottom: 15px; }
         
-        /* Form Overlap Fix */
+        /* ఫారమ్ ఫీల్డ్స్ ఒకదానిపై ఒకటి రాకుండా కంట్రోల్ */
         .form-control { 
-            background: #1a1a1a !important; 
-            border: 1px solid #333 !important; 
-            color: #fff !important; 
-            border-radius: 12px !important; 
-            margin-bottom: 12px !important; 
-            padding: 12px !important;
-            width: 100% !important;
+            background: #1a1a1a !important; border: 1px solid #333 !important; color: #fff !important; 
+            border-radius: 12px !important; margin-bottom: 15px !important; padding: 12px !important; width: 100% !important; display: block !important;
         }
-        
         .btn-buy { background: #fff; color: #000; font-weight: 800; border-radius: 12px; padding: 15px; border: none; width: 100%; text-transform: uppercase; transition: 0.3s; }
-        .btn-buy:hover { background: #00f2ff; transform: scale(1.02); }
-
         .payment-alert { background: #111; border: 1px solid #28a745; color: #fff; border-radius: 25px; padding: 30px; margin-bottom: 40px; }
-
-        @media (max-width: 992px) { .card-split { flex-direction: column; } .img-side { min-height: 280px; } }
+        @media (max-width: 992px) { .card-split { flex-direction: column; } .img-side { height: 300px; } }
         .whatsapp-float { position: fixed; bottom: 30px; right: 30px; background: #25d366; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; text-decoration: none; z-index: 1000; }
     </style>
 </head>
 <body>
     <a href="https://wa.me" class="whatsapp-float" target="_blank"><i class="fab fa-whatsapp"></i></a>
-
-    <div class="hero">
-        <div class="container">
-            <h1>SMART-WIN</h1>
-            <div class="timer-box"><div id="countdown">00:00:00</div></div>
-        </div>
-    </div>
-
+    <div class="hero"><div class="container"><h1>SMART-WIN</h1><div class="timer-box"><div id="countdown">00:00:00</div></div></div></div>
     <div class="container mt-5">
         {% with messages = get_flashed_messages() %}{% if messages %}{% for m in messages %}
             <div class="payment-alert text-center shadow">
-                <h3 class="text-success fw-bold">🎉 టికెట్ కన్ఫర్మ్ చేయండి!</h3>
+                <h3 class="text-success fw-bold">🎉 టికెట్ రిజర్వ్ అయ్యింది!</h3>
                 <p>{{m}}</p>
                 <div class="bg-white p-3 d-inline-block rounded-3 mb-3">
                     <img src="https://qrserver.com" alt="QR">
@@ -133,15 +100,7 @@ USER_HTML = """
 
         {% for key, info in cats.items() %}
         <div class="card-split">
-            <!-- RIGHT SIDE: IMAGE WITH SECURITY BYPASS -->
-            <div class="img-side">
-                <img src="{{ info.image_url }}" 
-                     referrerpolicy="no-referrer" 
-                     onerror="this.src='https://placeholder.com'" 
-                     class="mobile-img">
-            </div>
-            
-            <!-- LEFT SIDE: DETAILS -->
+            <div class="img-side"><img src="{{ info.image_url }}" class="mobile-img" alt="Phone"></div>
             <div class="detail-side">
                 <div class="price-badge">₹{{ info.price }} ONLY</div>
                 <h2 class="fw-bold mb-2" style="color: #00f2ff">{{ info.name }}</h2>
@@ -156,7 +115,6 @@ USER_HTML = """
         </div>
         {% endfor %}
     </div>
-
     <script>
         function updateTimer() {
             const now = new Date();
