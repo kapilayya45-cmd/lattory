@@ -1,24 +1,20 @@
 import os
 import random
-from datetime import datetime
-from flask import Flask, request, redirect, url_for, flash, render_template_string
+from flask import Flask, request, redirect, url_for, render_template_string, flash
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'smart-win-final-ultra-stylish-v11'
+app.config['SECRET_KEY'] = 'smart-win-final-999'
 
-# --- ఇమేజ్ రావడానికి ప్రాక్సీ సర్వర్ వాడుతున్నాను (Guaranteed Fix) ---
-def get_safe_url(img_url):
-    return f"https://weserv.nl{img_url}&w=500&fit=contain&bg=white"
-
-# --- మీ అమేజాన్ ఇమేజ్ లింక్స్ ఇక్కడ ఉన్నాయి ---
-RAW_DATA = {
+# --- IMAGE LINKS (Direct Public Links) ---
+CATEGORIES = {
     'low_cost': {
         'name': 'Budget Kings', 
         'model': 'Redmi 13C', 
         'specs': '5000mAh Battery | 50MP AI Camera | 8GB RAM',
         'price': 50, 
         'color': '#00f2ff',
-        'img': 'https://media-amazon.com'
+        # Google Image Proxy used here
+        'image_url': 'https://weserv.nl'
     },
     'mid_range': {
         'name': 'Mid-Range Beasts', 
@@ -26,7 +22,7 @@ RAW_DATA = {
         'specs': '100W Charging | AMOLED 120Hz | Sony Sensor',
         'price': 150, 
         'color': '#b721ff',
-        'img': 'https://media-amazon.com'
+        'image_url': 'https://weserv.nl'
     },
     'flagship': {
         'name': 'Premium Flagships', 
@@ -34,97 +30,80 @@ RAW_DATA = {
         'specs': 'Titanium Build | A17 Pro Chip | 48MP Pro Camera',
         'price': 500, 
         'color': '#ff4b2b',
-        'img': 'https://media-amazon.com'
+        'image_url': 'https://weserv.nl'
     }
 }
 
-# Generate Proxy Links
-CATEGORIES = {k: {**v, 'image_url': get_safe_url(v['img'])} for k, v in RAW_DATA.items()}
-
-# --- UI Template (Forced Layout + Image Display) ---
+# --- UI Template (Absolute Layout Fix) ---
 USER_HTML = """
 <!DOCTYPE html>
-<html lang="te">
+<html>
 <head>
-    <title>SMART-WIN | Ultra Modern</title>
+    <title>SMART-WIN</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://jsdelivr.net">
     <style>
         @import url('https://googleapis.com');
+        body { background: #050505; color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        .hero { padding: 40px 0; text-align: center; border-bottom: 1px solid #222; }
+        .hero h1 { font-family: 'Syncopate', sans-serif; font-size: 2rem; color: #00f2ff; text-shadow: 0 0 10px #00f2ff; letter-spacing: 5px; }
         
-        body { background: #050505; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        
-        /* Header Section */
-        .hero { padding: 40px 0; text-align: center; border-bottom: 1px solid #222; background: radial-gradient(circle at top, #111 0%, #050505 100%); }
-        .hero h1 { font-family: 'Syncopate', sans-serif; font-size: 2rem; color: #00f2ff; text-shadow: 0 0 15px #00f2ff; letter-spacing: 5px; }
-        
-        .timer-box { background: rgba(255,255,255,0.03); border: 1px solid #00f2ff; padding: 10px 25px; border-radius: 50px; display: inline-block; margin-top: 15px; }
+        .timer-box { background: rgba(0,242,255,0.05); border: 1px solid #00f2ff; padding: 10px 25px; border-radius: 50px; display: inline-block; margin-top: 15px; }
         #countdown { font-size: 1.5rem; font-weight: 800; color: #fff; }
 
-        /* Split Card Design */
-        .card-split { 
+        /* SPLIT CARD FIX */
+        .main-card { 
             background: #111; 
             border: 1px solid #222; 
-            border-radius: 35px; 
+            border-radius: 30px; 
+            margin: 20px auto; 
+            max-width: 900px; 
             overflow: hidden; 
-            margin-bottom: 40px; 
-            display: flex; 
-            flex-direction: row-reverse; /* Right: Image, Left: Detail */
-            flex-wrap: wrap; 
+            display: flex;
+            flex-wrap: wrap; /* Fixed for Mobile */
         }
-        
-        /* Image Box - Pure White for Contrast */
-        .img-side { 
+
+        .details-side { 
+            flex: 1; 
+            padding: 30px; 
+            min-width: 300px;
+        }
+
+        .image-side { 
             flex: 1; 
             background: #ffffff; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
-            padding: 30px; 
             min-width: 300px; 
-            min-height: 400px; 
+            min-height: 350px;
         }
-        .mobile-img { max-width: 100%; max-height: 380px; object-fit: contain; }
+
+        .mobile-img { width: 90%; height: auto; max-height: 320px; object-fit: contain; }
+
+        .price-badge { background: #00f2ff; color: #000; padding: 5px 20px; border-radius: 50px; font-weight: 800; display: inline-block; margin-bottom: 15px; }
         
-        /* Detail Side */
-        .detail-side { 
-            flex: 1.2; 
-            padding: 45px; 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: center; 
-            min-width: 300px; 
-        }
-        .price-badge { background: #00f2ff; color: #000; padding: 6px 20px; border-radius: 50px; font-weight: 800; font-size: 1.3rem; width: fit-content; margin-bottom: 15px; }
-        
-        /* Form Box - Guaranteed No Overlap */
-        .form-group { width: 100%; margin-bottom: 15px; }
-        .form-control { 
+        /* FORM INPUT FIX (Strict Spacing) */
+        .my-input { 
             background: #1a1a1a !important; 
             border: 1px solid #333 !important; 
             color: #fff !important; 
             border-radius: 12px !important; 
-            padding: 14px !important;
+            padding: 12px !important; 
+            width: 100% !important; 
+            margin-bottom: 15px !important; 
             display: block !important;
-            width: 100% !important;
         }
+
+        .btn-buy { background: #fff; color: #000; font-weight: 800; border-radius: 12px; padding: 15px; border: none; width: 100%; text-transform: uppercase; margin-top: 10px; }
         
-        .btn-buy { background: #fff; color: #000; font-weight: 800; border-radius: 12px; padding: 15px; border: none; width: 100%; text-transform: uppercase; transition: 0.3s; margin-top: 10px; }
-        .btn-buy:hover { background: #00f2ff; transform: scale(1.02); box-shadow: 0 0 20px #00f2ff; }
-
-        .payment-alert { background: #111; border: 1px solid #28a745; color: #fff; border-radius: 25px; padding: 30px; margin-bottom: 40px; }
-
-        @media (max-width: 992px) { 
-            .card-split { flex-direction: column; } 
-            .img-side { min-height: 300px; } 
+        @media (max-width: 768px) {
+            .main-card { flex-direction: column-reverse; } /* Image on top for mobile */
+            .image-side { min-height: 250px; }
         }
-
-        .whatsapp-float { position: fixed; bottom: 30px; right: 30px; background: #25d366; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; text-decoration: none; z-index: 1000; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
-    <a href="https://wa.me" class="whatsapp-float" target="_blank"><i class="fab fa-whatsapp"></i></a>
-
     <div class="hero">
         <div class="container">
             <h1>SMART-WIN</h1>
@@ -132,47 +111,37 @@ USER_HTML = """
         </div>
     </div>
 
-    <div class="container mt-5">
+    <div class="container mt-4">
         {% with messages = get_flashed_messages() %}{% if messages %}{% for m in messages %}
-            <div class="payment-alert text-center shadow-lg">
-                <h3 class="text-success fw-bold">🎉 TICKET RESERVED!</h3>
+            <div class="text-center p-4 mb-4" style="background:#111; border:1px solid #28a745; border-radius:20px;">
+                <h4 class="text-success fw-bold">TICKET RESERVED!</h4>
                 <p>{{m}}</p>
-                <hr style="border-color: #333;">
-                <p class="mb-3">Scan QR to Pay Entry Fee & Confirm:</p>
-                <div class="bg-white p-3 d-inline-block rounded-3 mb-3">
+                <div class="bg-white p-2 d-inline-block rounded mb-2">
                     <img src="https://qrserver.com" alt="QR">
                 </div>
-                <p class="text-secondary small">Send screenshot to WhatsApp (9121195323) after payment.</p>
+                <p class="small text-secondary">Pay & WhatsApp Screenshot: 9121195323</p>
             </div>
         {% endfor %}{% endif %}{% endwith %}
 
         {% for key, info in cats.items() %}
-        <div class="card-split">
-            <!-- RIGHT SIDE: IMAGE -->
-            <div class="img-side">
-                <img src="{{ info.image_url }}" 
-                     onerror="this.src='https://placeholder.com{{ info.model }}'" 
-                     class="mobile-img">
-            </div>
-            
-            <!-- LEFT SIDE: DETAILS & FORM -->
-            <div class="detail-side">
+        <div class="main-card shadow-lg">
+            <!-- LEFT DETAILS -->
+            <div class="details-side">
                 <div class="price-badge">₹{{ info.price }} ONLY</div>
-                <h2 class="fw-bold mb-1" style="color: #00f2ff">{{ info.name }}</h2>
-                <p class="text-secondary small mb-4" style="border-left: 3px solid #00f2ff; padding-left: 15px;">{{ info.specs }}</p>
+                <h2 style="color: {{info.color}}">{{ info.name }}</h2>
+                <p class="small text-secondary mb-4" style="border-left: 3px solid #00f2ff; padding-left: 10px;">{{ info.specs }}</p>
                 
                 <form action="/buy/{{ key }}" method="POST">
-                    <div class="form-group">
-                        <input name="name" placeholder="ENTER FULL NAME" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <input name="phone" placeholder="WHATSAPP NUMBER" class="form-control" required>
-                    </div>
-                    <div class="form-group">
-                        <textarea name="address" placeholder="COMPLETE DELIVERY ADDRESS" class="form-control" rows="2" required></textarea>
-                    </div>
-                    <button class="btn-buy">BOOK & PAY NOW</button>
+                    <input name="name" placeholder="ENTER FULL NAME" class="my-input" required>
+                    <input name="phone" placeholder="WHATSAPP NUMBER" class="my-input" required>
+                    <textarea name="address" placeholder="DELIVERY ADDRESS" class="my-input" rows="2" required></textarea>
+                    <button class="btn-buy">BOOK TICKET NOW</button>
                 </form>
+            </div>
+            
+            <!-- RIGHT IMAGE -->
+            <div class="image-side">
+                <img src="{{ info.image_url }}" onerror="this.src='https://placeholder.com...'" class="mobile-img">
             </div>
         </div>
         {% endfor %}
@@ -202,8 +171,7 @@ def index():
 @app.route('/buy/<cat>', methods=['POST'])
 def buy(cat):
     t_num = random.randint(100000, 999999)
-    from flask import flash
-    flash(f"మీ టికెట్ నంబర్: #{t_num}")
+    flash(f"Your Lucky Number: #{t_num}")
     return redirect(url_for('index'))
 
 app = app
