@@ -48,11 +48,6 @@
     button {
       background: gold;
       font-weight: bold;
-      cursor: pointer;
-    }
-
-    h2 {
-      color: gold;
     }
 
     .card {
@@ -60,12 +55,6 @@
       padding: 10px;
       margin: 10px 0;
       border-radius: 10px;
-    }
-
-    @media(max-width: 768px) {
-      .container {
-        flex-direction: column;
-      }
     }
   </style>
 </head>
@@ -76,40 +65,34 @@
 
   <!-- LEFT -->
   <div class="left">
-
     <h2>🎰 Daily Lottery</h2>
-    <p>⏰ Draw Time: Daily 8:00 PM</p>
+    <p>⏰ Draw: 8PM</p>
 
-    <!-- VARIANTS -->
-    <div class="card">📱 Budget Kings (₹10,000 mobiles)</div>
-    <div class="card">🔥 Mid Range (₹50,000 mobiles)</div>
-    <div class="card">👑 Premium (iPhone / Flagship)</div>
-
-    <br>
+    <div class="card">📱 ₹10,000 Mobiles</div>
+    <div class="card">🔥 ₹50,000 Mobiles</div>
+    <div class="card">👑 Premium iPhones</div>
 
     <input id="username" placeholder="Username">
-    <input id="password" placeholder="Password">
-    <br>
+    <input id="password" placeholder="Password"><br>
 
     <button onclick="signup()">Signup</button>
     <button onclick="login()">Login</button>
 
     <br><br>
 
-    <input id="number" placeholder="Ticket Number">
-    <button onclick="buy()">Buy Ticket</button>
+    <input id="number" placeholder="Ticket">
+    <button onclick="buy()">Buy</button>
 
     <br><br>
 
-    <button onclick="draw()">Draw Winner</button>
+    <button onclick="draw()">Draw</button>
 
     <h3 id="status"></h3>
-
   </div>
 
-  <!-- RIGHT IMAGES -->
+  <!-- RIGHT IMAGE -->
   <div class="right">
-    <img id="slider" src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9">
+    <img id="slider" src="https://dummyimage.com/400x600/000/fff&text=Mobile+Lottery">
   </div>
 
 </div>
@@ -117,12 +100,12 @@
 <script>
 let user;
 
-// ✅ MOBILE IMAGES (REAL PHONE IMAGES)
+// ✅ SUPER SAFE IMAGES (always load)
 const images = [
-  "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
-  "https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5",
-  "https://images.unsplash.com/photo-1512499617640-c2f999098c01",
-  "https://images.unsplash.com/photo-1517336714731-489689fd1ca8"
+  "https://dummyimage.com/400x600/000/fff&text=Budget+Mobile",
+  "https://dummyimage.com/400x600/111/fff&text=50K+Mobile",
+  "https://dummyimage.com/400x600/222/fff&text=iPhone+Premium",
+  "https://dummyimage.com/400x600/333/fff&text=Win+Now"
 ];
 
 let i = 0;
@@ -130,12 +113,11 @@ let i = 0;
 setInterval(() => {
   i = (i + 1) % images.length;
   document.getElementById("slider").src = images[i];
-}, 2500);
+}, 2000);
 
-// BACKEND URL
+// BACKEND
 const API = "http://localhost:3000";
 
-// SIGNUP
 async function signup() {
   await fetch(API + "/signup", {
     method: "POST",
@@ -145,10 +127,9 @@ async function signup() {
       password: password.value
     })
   });
-  status.innerText = "Signup success";
+  status.innerText = "Signup done";
 }
 
-// LOGIN
 async function login() {
   const res = await fetch(API + "/login", {
     method: "POST",
@@ -160,10 +141,9 @@ async function login() {
   });
 
   user = await res.json();
-  status.innerText = "Logged in";
+  status.innerText = "Login success";
 }
 
-// BUY
 async function buy() {
   if(!user) return status.innerText = "Login first";
 
@@ -176,16 +156,14 @@ async function buy() {
     })
   });
 
-  status.innerText = "Ticket Bought";
+  status.innerText = "Ticket bought";
 }
 
-// DRAW (simulate 8PM)
 async function draw() {
   const now = new Date();
-  const hour = now.getHours();
 
-  if(hour !== 20){
-    status.innerText = "Draw only at 8PM";
+  if(now.getHours() !== 20){
+    status.innerText = "Draw at 8PM only";
     return;
   }
 
