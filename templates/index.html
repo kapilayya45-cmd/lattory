@@ -2,30 +2,116 @@
 <html>
 <head>
   <title>Lottery App</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #111;
+      color: white;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+
+    .left {
+      width: 60%;
+      padding: 30px;
+    }
+
+    .right {
+      width: 40%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: black;
+    }
+
+    .right img {
+      width: 90%;
+      height: 90%;
+      object-fit: cover;
+      border-radius: 15px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      border: none;
+    }
+
+    button {
+      background: gold;
+      cursor: pointer;
+    }
+
+    h2 {
+      color: gold;
+    }
+  </style>
 </head>
+
 <body>
 
-<h2>Lottery Game</h2>
+<div class="container">
 
-<input id="username" placeholder="username">
-<input id="password" placeholder="password">
-<button onclick="signup()">Signup</button>
-<button onclick="login()">Login</button>
+  <!-- LEFT SIDE -->
+  <div class="left">
+    <h2>🎰 Lottery Game</h2>
 
-<br><br>
+    <input id="username" placeholder="Username">
+    <input id="password" placeholder="Password">
+    <br>
 
-<input id="number" placeholder="ticket number">
-<button onclick="buy()">Buy Ticket (10 coins)</button>
+    <button onclick="signup()">Signup</button>
+    <button onclick="login()">Login</button>
 
-<br><br>
+    <br><br>
 
-<button onclick="draw()">Draw Winner</button>
+    <input id="number" placeholder="Ticket Number">
+    <button onclick="buy()">Buy Ticket</button>
+
+    <br><br>
+
+    <button onclick="draw()">Draw Winner</button>
+
+    <h3 id="status"></h3>
+  </div>
+
+  <!-- RIGHT SIDE IMAGE -->
+  <div class="right">
+    <img id="slider" src="https://picsum.photos/400/600?1">
+  </div>
+
+</div>
 
 <script>
 let user;
 
+// IMAGE SLIDER
+const images = [
+  "https://picsum.photos/400/600?1",
+  "https://picsum.photos/400/600?2",
+  "https://picsum.photos/400/600?3",
+  "https://picsum.photos/400/600?4"
+];
+
+let i = 0;
+
+setInterval(() => {
+  i = (i + 1) % images.length;
+  document.getElementById("slider").src = images[i];
+}, 2000);
+
+// BACKEND URL (change if deployed)
+const API = "http://localhost:3000";
+
+// SIGNUP
 async function signup() {
-  await fetch("http://localhost:3000/signup", {
+  await fetch(API + "/signup", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
@@ -33,11 +119,13 @@ async function signup() {
       password: password.value
     })
   });
-  alert("Signup done");
+
+  status.innerText = "Signup success";
 }
 
+// LOGIN
 async function login() {
-  const res = await fetch("http://localhost:3000/login", {
+  const res = await fetch(API + "/login", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
@@ -47,11 +135,12 @@ async function login() {
   });
 
   user = await res.json();
-  alert("Logged in");
+  status.innerText = "Logged in";
 }
 
+// BUY
 async function buy() {
-  await fetch("http://localhost:3000/buy", {
+  await fetch(API + "/buy", {
     method: "POST",
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
@@ -60,13 +149,15 @@ async function buy() {
     })
   });
 
-  alert("Ticket bought");
+  status.innerText = "Ticket Bought";
 }
 
+// DRAW
 async function draw() {
-  const res = await fetch("http://localhost:3000/draw");
+  const res = await fetch(API + "/draw");
   const data = await res.json();
-  alert("Winner: " + data.winner.userId);
+
+  status.innerText = "Winner: " + data.winner.userId;
 }
 </script>
 
